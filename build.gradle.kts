@@ -33,9 +33,11 @@ tasks.shadowJar {
     archiveClassifier.set("")
     archiveVersion.set(version.toString())
 
-    // Relocate Gson so it can never clash with another extension's bundled
-    // copy inside the shared Burp JVM.
-    relocate("com.google.gson", "io.disclose.burplookup.shaded.gson")
+    // NOTE: Gson is bundled but NOT relocated. Burp loads each extension in its
+    // own isolated classloader, so a bundled-dependency clash across extensions
+    // isn't a concern — and Shadow's relocation remapper has an ASM bug that
+    // fails on classes carrying `long` constants (our cache TTL). Bundling
+    // without relocation is the correct, working choice here.
 }
 
 // Make `build` produce the shaded jar.
