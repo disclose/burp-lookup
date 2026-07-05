@@ -31,9 +31,20 @@ public class LookupClient {
 
     private final HttpClient httpClient;
     private final Gson gson;
+    private final String endpoint;
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public LookupClient() {
+        this(ENDPOINT);
+    }
+
+    /**
+     * Package-private constructor used by the test suite to point the client at a
+     * local mock server. Production code uses the no-arg constructor, which pins
+     * the endpoint to {@link #ENDPOINT}.
+     */
+    LookupClient(String endpoint) {
+        this.endpoint = endpoint;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .followRedirects(HttpClient.Redirect.NORMAL)
@@ -60,7 +71,7 @@ public class LookupClient {
         String body = gson.toJson(Map.of("input", host));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(ENDPOINT))
+                .uri(URI.create(endpoint))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")

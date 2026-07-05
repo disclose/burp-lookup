@@ -25,6 +25,11 @@ dependencies {
 
     // NOT provided by Burp -> real dependency, shaded into the fat jar.
     implementation("com.google.code.gson:gson:2.14.0")
+
+    // Test-only: JUnit 5. junit-platform-launcher is added explicitly so the
+    // `test` task works on Gradle 9 (which no longer auto-provides it).
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
 }
 
 tasks.shadowJar {

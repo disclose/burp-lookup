@@ -25,6 +25,9 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Test
+        run: gradle test --no-daemon --stacktrace
+
       - name: Build fat jar
         run: gradle shadowJar --no-daemon --stacktrace
 
