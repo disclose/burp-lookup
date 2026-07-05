@@ -28,7 +28,7 @@ A short in-memory cache (5 min TTL) and a 15-second request timeout keep it from
 
 This project builds a self-contained (fat) jar with the Gradle [Shadow](https://github.com/GradleUp/shadow) plugin. `montoya-api` is `compileOnly` because Burp provides it at runtime; Gson is shaded into the jar because Burp does not.
 
-**Easiest:** download the prebuilt jar from the latest [GitHub Actions build](../../actions) (the `burp-lookup-jar` artifact) — no toolchain needed.
+**Easiest:** download `burp-lookup-1.0.0.jar` from the [latest release](https://github.com/disclose/burp-lookup/releases/latest) — no toolchain needed.
 
 **Build it yourself** (requires a JDK 17+ and [Gradle](https://gradle.org/install/) 8.x):
 
@@ -40,7 +40,7 @@ The jar is written to `build/libs/burp-lookup-1.0.0.jar`. CI builds and publishe
 
 ## Install in Burp
 
-1. Build the jar (above), or download it from the [GitHub Actions build artifacts](../../actions).
+1. Download `burp-lookup-1.0.0.jar` from the [latest release](https://github.com/disclose/burp-lookup/releases/latest) (or build it above).
 2. In Burp: **Extensions → Installed → Add**.
 3. Extension type: **Java**.
 4. Select `build/libs/burp-lookup-1.0.0.jar`.
