@@ -1,3 +1,25 @@
+<div align="center">
+
+<a href="https://disclose.io"><img src="docs/marquee.png" alt="burp-lookup · disclose.io" width="820"></a>
+
+# burp-lookup
+
+### Look up a host's **security-disclosure contact** — right inside Burp Suite. Powered by [lookup.disclose.io](https://lookup.disclose.io).
+
+<p>
+<a href="LICENSE"><img src="https://img.shields.io/github/license/disclose/burp-lookup?color=5B3AB6&label=license" alt="license"></a>
+<a href="https://lookup.disclose.io"><img src="https://img.shields.io/badge/lookup-lookup.disclose.io-5B3AB6" alt="lookup lookup.disclose.io"></a>
+<img src="https://img.shields.io/badge/for-Burp%20Suite-5B3AB6" alt="for Burp%20Suite">
+<a href="https://github.com/disclose/burp-lookup/issues"><img src="https://img.shields.io/badge/PRs-welcome-5B3AB6" alt="PRs welcome"></a>
+</p>
+
+*Part of **[the disclose.io Project](https://disclose.io)** — the open, vendor-neutral infrastructure for vulnerability disclosure. [Browse the ecosystem →](https://github.com/disclose)*
+
+</div>
+
+---
+
+
 # Disclosure Contact Lookup — Burp Suite extension
 
 A [Burp Suite](https://portswigger.net/burp) extension that finds the **security-disclosure contact** for any host you're testing, using the free [lookup.disclose.io](https://lookup.disclose.io) attribution API.
