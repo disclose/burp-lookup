@@ -29,7 +29,7 @@ dependencies {
     // Test-only: JUnit 5. junit-platform-launcher is added explicitly so the
     // `test` task works on Gradle 9 (which no longer auto-provides it).
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.1")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.1")
 }
 
 tasks.shadowJar {
