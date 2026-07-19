@@ -2,7 +2,7 @@ plugins {
     java
     // Fat-jar plugin: shades dependencies (Gson) into the jar because Burp
     // does NOT provide them at runtime. Burp DOES provide montoya-api at runtime.
-    id("com.gradleup.shadow") version "9.5.1"
+    id("com.gradleup.shadow") version "9.6.0"
 }
 
 group = "io.disclose"
@@ -21,7 +21,7 @@ java {
 
 dependencies {
     // Provided by Burp at runtime -> compileOnly (must NOT be shaded in).
-    compileOnly("net.portswigger.burp.extensions:montoya-api:2026.4")
+    compileOnly("net.portswigger.burp.extensions:montoya-api:2026.7")
 
     // NOT provided by Burp -> real dependency, shaded into the fat jar.
     implementation("com.google.code.gson:gson:2.14.0")
