@@ -24,7 +24,7 @@
 
 A [Burp Suite](https://portswigger.net/burp) extension that finds the **security-disclosure contact** for any host you're testing, using the free [lookup.disclose.io](https://lookup.disclose.io) attribution API.
 
-Right-click a request (or a host in the site map), choose **"Find disclosure contact"**, and the extension resolves the host to its owning organization and a ranked list of disclosure channels — `security.txt`, VDP / bug-bounty programs, PSIRT directories, and convention emails — so you know exactly where to report what you found.
+Right-click a request (or a host in the site map), choose **"Find disclosure contact"**, and the extension resolves the host to its owning organization and server-ranked route groups — owner and authorized-agent routes first, coordinator fallbacks last — so you know exactly where to report what you found.
 
 Built on the modern **Montoya API** (Java).
 
@@ -35,7 +35,7 @@ Built on the modern **Montoya API** (Java).
 - Adds a **"Find disclosure contact"** context-menu item on any request/response (Proxy, Target, Logger, Repeater, …).
 - Calls `POST https://lookup.disclose.io/api/lookup` with the host and renders the result in a dedicated **Disclosure Lookup** suite tab:
   - **Attribution** — owning organization, parent company, jurisdiction, confidence.
-  - **Ranked contacts** — verified channels first, then by confidence (type, value, label, source).
+  - **Route-aware contacts** — grouped by responsible party and kept in the API's authoritative order (route, entity, relation, type, value, label, source).
 - Keeps an **activity log** of every lookup (also mirrored to Burp's extension output).
 
 ## Privacy
@@ -52,7 +52,7 @@ This project builds a self-contained (fat) jar with the Gradle [Shadow](https://
 
 **Easiest:** download `burp-lookup-1.0.0.jar` from the [latest release](https://github.com/disclose/burp-lookup/releases/latest) — no toolchain needed.
 
-**Build it yourself** (requires a JDK 17+ and [Gradle](https://gradle.org/install/) 8.x):
+**Build it yourself** (requires a JDK 17+ and [Gradle](https://gradle.org/install/) 9.x):
 
 ```sh
 gradle shadowJar
@@ -72,7 +72,7 @@ The jar is written to `build/libs/burp-lookup-1.0.0.jar`. CI builds and publishe
 
 1. Anywhere you have an HTTP request — Proxy history, Target site map, Repeater, Logger — **right-click**.
 2. Choose **"Find disclosure contact (`<host>`)"**.
-3. Switch to the **Disclosure Lookup** tab to see the attribution and ranked contacts.
+3. Switch to the **Disclosure Lookup** tab to see the attribution and route-aware contacts.
 
 ---
 
