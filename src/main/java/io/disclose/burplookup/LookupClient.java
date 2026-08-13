@@ -28,6 +28,7 @@ public class LookupClient {
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
     private static final long CACHE_TTL_MILLIS = 5 * 60 * 1000L; // 5 minutes
+    private static final String CLIENT_ID = "burp-lookup/1.1.0";
 
     private final HttpClient httpClient;
     private final Gson gson;
@@ -75,7 +76,8 @@ public class LookupClient {
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .header("User-Agent", "burp-lookup/1.0 (+https://github.com/disclose/burp-lookup)")
+                .header("User-Agent", CLIENT_ID + " (+https://github.com/disclose/burp-lookup)")
+                .header("X-Lookup-Client", CLIENT_ID)
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
@@ -95,8 +97,10 @@ public class LookupClient {
 
         int code = response.statusCode();
         if (code == 429) {
-            throw new LookupException("Rate limited by lookup.disclose.io (30 req/min). "
-                    + "Please wait a moment and try again.");
+            String limit = response.headers().firstValue("RateLimit-Limit").orElse("the current quota");
+            String retryAfter = response.headers().firstValue("Retry-After").orElse("a moment");
+            throw new LookupException("Rate limited by lookup.disclose.io (limit " + limit
+                    + "). Retry after " + retryAfter + " second(s).");
         }
         if (code < 200 || code >= 300) {
             throw new LookupException("lookup.disclose.io returned HTTP " + code + ".");

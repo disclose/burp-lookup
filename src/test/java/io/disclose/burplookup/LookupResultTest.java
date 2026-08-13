@@ -24,9 +24,14 @@ class LookupResultTest {
         {"input":"cloudflare.com","assetType":"domain","status":"complete","hasErrors":false,
          "attribution":{"confidence":"high","organization":"Cloudflare","jurisdiction":"US"},
          "contacts":[
-           {"type":"bug_bounty","value":"https://www.cloudflare.com/disclosure/","confidence":"high","verified":true,"label":"Cloudflare (Bounty)"},
-           {"type":"convention","value":"security@cloudflare.com","confidence":"low","verified":false}
-         ]}
+           {"type":"convention","value":"security@cloudflare.com","confidence":"low","verified":false},
+           {"type":"bug_bounty","value":"https://www.cloudflare.com/disclosure/","confidence":"high","verified":true,"label":"Cloudflare (Bounty)"}
+         ],
+         "contactGroups":[
+           {"entity":"Cloudflare","relation":"self","routeClass":"first_party","contacts":[{"type":"bug_bounty","value":"https://owner.example"}]},
+           {"entity":"CERT/CC","relation":"coordinator","routeClass":"coordinator","contacts":[{"type":"cert","value":"https://cert.example"}]}
+         ],
+         "routeSummary":{"routeClass":"first_party","headline":"First-party reporting route found","firstPartyFound":true,"ownerRouteFound":true,"coordinatorAvailable":true}}
         """;
 
     @Test
@@ -43,21 +48,20 @@ class LookupResultTest {
     }
 
     @Test
-    void rankedContactsPutVerifiedHighConfidenceFirst() {
+    void flatContactsPreserveServerOrder() {
         LookupResult r = GSON.fromJson(RECORDED, LookupResult.class);
         List<LookupResult.Contact> ranked = r.rankedContacts();
-        assertTrue(ranked.get(0).verified());
-        assertEquals("bug_bounty", ranked.get(0).type());
-        assertFalse(ranked.get(1).verified());
+        assertEquals("convention", ranked.get(0).type());
+        assertEquals("bug_bounty", ranked.get(1).type());
     }
 
     @Test
-    void confidenceRankOrdersHighMediumLow() {
-        assertEquals(3, LookupResult.confidenceRank("high"));
-        assertEquals(2, LookupResult.confidenceRank("MEDIUM"));
-        assertEquals(1, LookupResult.confidenceRank("low"));
-        assertEquals(0, LookupResult.confidenceRank(null));
-        assertEquals(0, LookupResult.confidenceRank("bogus"));
+    void routeGroupsAndContactsPreserveServerOrder() {
+        LookupResult r = GSON.fromJson(RECORDED, LookupResult.class);
+        assertEquals(List.of("Cloudflare", "CERT/CC"),
+                r.contactGroups().stream().map(LookupResult.ContactGroup::entity).toList());
+        assertEquals("https://owner.example", r.contactGroups().get(0).contacts().get(0).value());
+        assertEquals("First-party reporting route found", r.routeSummary().headline());
     }
 
     @Test
@@ -66,6 +70,8 @@ class LookupResultTest {
         assertEquals("unknown", r.assetType());
         assertEquals("unknown", r.status());
         assertTrue(r.rankedContacts().isEmpty());
+        assertTrue(r.contactGroups().isEmpty());
+        assertNull(r.routeSummary());
         assertNull(r.detailExplanation());
     }
 

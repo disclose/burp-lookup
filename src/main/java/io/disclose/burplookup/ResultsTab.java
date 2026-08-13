@@ -29,7 +29,9 @@ import java.util.List;
 public class ResultsTab {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
-    private static final String[] COLUMNS = {"Verified", "Type", "Confidence", "Contact", "Label", "Source"};
+    private static final String[] COLUMNS = {
+            "Route", "Entity", "Relation", "Verified", "Type", "Confidence", "Contact", "Label", "Source"
+    };
 
     private final MontoyaApi api;
 
@@ -104,22 +106,41 @@ public class ResultsTab {
             attributionLabel.setText(buildAttributionHtml(host, result));
             tableModel.setRowCount(0);
 
-            List<LookupResult.Contact> contacts = result.rankedContacts();
-            for (LookupResult.Contact c : contacts) {
+            List<LookupResult.ContactGroup> groups = result.contactGroups();
+            int contactCount = 0;
+            if (!groups.isEmpty()) {
+                for (LookupResult.ContactGroup group : groups) {
+                    for (LookupResult.Contact c : group.contacts()) {
+                        addContactRow(group.routeClass(), group.entity(), group.relation(), c);
+                        contactCount++;
+                    }
+                }
+            } else {
+                List<LookupResult.Contact> contacts = result.contactsInServerOrder();
+                for (LookupResult.Contact c : contacts) {
+                    addContactRow(c.routeClass(), c.entity(), c.relation(), c);
+                    contactCount++;
+                }
+            }
+
+            appendLog(String.format("%s -> status=%s, %d contact(s)%s",
+                    host, result.status(), contactCount,
+                    result.hasErrors() ? " (results may be incomplete)" : ""));
+        });
+    }
+
+    private void addContactRow(String routeClass, String entity, String relation, LookupResult.Contact c) {
                 tableModel.addRow(new Object[]{
+                        routeClass,
+                        entity,
+                        relation,
                         c.verified() ? "yes" : "no",
                         c.type(),
                         c.confidence(),
                         c.value(),
-                        c.label(),
+                        c.deliveryAgent().isBlank() ? c.label() : c.label() + " via " + c.deliveryAgent(),
                         c.source()
                 });
-            }
-
-            appendLog(String.format("%s -> status=%s, %d contact(s)%s",
-                    host, result.status(), contacts.size(),
-                    result.hasErrors() ? " (results may be incomplete)" : ""));
-        });
     }
 
     /** Called on lookup failure (offline, timeout, non-2xx, parse error). */
@@ -140,6 +161,11 @@ public class ResultsTab {
             sb.append(" &middot; <i>results may be incomplete</i>");
         }
         sb.append("<br>");
+
+        LookupResult.RouteSummary routeSummary = result.routeSummary();
+        if (routeSummary != null && !routeSummary.headline().isBlank()) {
+            sb.append("Route: <b>").append(escape(routeSummary.headline())).append("</b><br>");
+        }
 
         LookupResult.Attribution attr = result.attribution();
         if (attr != null && attr.organization() != null) {

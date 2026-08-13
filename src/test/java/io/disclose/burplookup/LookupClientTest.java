@@ -27,10 +27,16 @@ class LookupClientTest {
     private static final String RECORDED =
             "{\"input\":\"cloudflare.com\",\"assetType\":\"domain\",\"status\":\"complete\","
             + "\"attribution\":{\"organization\":\"Cloudflare\",\"jurisdiction\":\"US\",\"confidence\":\"high\"},"
-            + "\"contacts\":[{\"type\":\"bug_bounty\",\"value\":\"https://x/y\",\"confidence\":\"high\",\"verified\":true}]}";
+            + "\"contacts\":[{\"type\":\"bug_bounty\",\"value\":\"https://x/y\",\"confidence\":\"high\",\"verified\":true}],"
+            + "\"contactGroups\":[{\"entity\":\"Cloudflare\",\"relation\":\"self\",\"routeClass\":\"first_party\","
+            + "\"contacts\":[{\"type\":\"bug_bounty\",\"value\":\"https://x/y\"}]}],"
+            + "\"routeSummary\":{\"routeClass\":\"first_party\",\"headline\":\"First-party route found\"}}";
 
     private HttpServer server;
     private final AtomicReference<String> lastBody = new AtomicReference<>();
+    private final AtomicReference<String> lastUserAgent = new AtomicReference<>();
+    private final AtomicReference<String> lastClient = new AtomicReference<>();
+    private final AtomicReference<String> lastAuthorization = new AtomicReference<>();
     private final AtomicInteger hits = new AtomicInteger();
     private volatile int status = 200;
     private volatile String responseBody = RECORDED;
@@ -42,6 +48,11 @@ class LookupClientTest {
         server.createContext("/api/lookup", exchange -> {
             hits.incrementAndGet();
             lastBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            lastUserAgent.set(exchange.getRequestHeaders().getFirst("User-Agent"));
+            lastClient.set(exchange.getRequestHeaders().getFirst("X-Lookup-Client"));
+            lastAuthorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            exchange.getResponseHeaders().add("RateLimit-Limit", "600");
+            exchange.getResponseHeaders().add("Retry-After", "7");
             byte[] out = responseBody.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(status, out.length);
             exchange.getResponseBody().write(out);
@@ -69,6 +80,16 @@ class LookupClientTest {
         LookupResult r = new LookupClient(endpoint).lookup("cloudflare.com");
         assertEquals("Cloudflare", r.attribution().organization());
         assertEquals(1, r.rankedContacts().size());
+        assertEquals("Cloudflare", r.contactGroups().get(0).entity());
+        assertEquals("first_party", r.routeSummary().routeClass());
+    }
+
+    @Test
+    void identifiesExactClientAndSendsNoAuthorization() throws Exception {
+        new LookupClient(endpoint).lookup("cloudflare.com");
+        assertEquals("burp-lookup/1.1.0 (+https://github.com/disclose/burp-lookup)", lastUserAgent.get());
+        assertEquals("burp-lookup/1.1.0", lastClient.get());
+        assertEquals(null, lastAuthorization.get());
     }
 
     @Test
@@ -85,6 +106,8 @@ class LookupClientTest {
         LookupException ex = assertThrows(LookupException.class,
                 () -> new LookupClient(endpoint).lookup("example.com"));
         assertTrue(ex.getMessage().toLowerCase().contains("rate limited"));
+        assertTrue(ex.getMessage().contains("600"));
+        assertTrue(ex.getMessage().contains("7"));
     }
 
     @Test
