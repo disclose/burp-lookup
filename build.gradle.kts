@@ -2,7 +2,7 @@ plugins {
     java
     // Fat-jar plugin: shades dependencies (Gson) into the jar because Burp
     // does NOT provide them at runtime. Burp DOES provide montoya-api at runtime.
-    id("com.gradleup.shadow") version "9.6.0"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "io.disclose"
@@ -28,8 +28,8 @@ dependencies {
 
     // Test-only: JUnit 5. junit-platform-launcher is added explicitly so the
     // `test` task works on Gradle 9 (which no longer auto-provides it).
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
 }
 
 tasks.shadowJar {
