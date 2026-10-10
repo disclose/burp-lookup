@@ -87,8 +87,8 @@ class LookupClientTest {
     @Test
     void identifiesExactClientAndSendsNoAuthorization() throws Exception {
         new LookupClient(endpoint).lookup("cloudflare.com");
-        assertEquals("burp-lookup/1.1.0 (+https://github.com/disclose/burp-lookup)", lastUserAgent.get());
-        assertEquals("burp-lookup/1.1.0", lastClient.get());
+        assertEquals("burp-lookup/1.1.1 (+https://github.com/disclose/burp-lookup)", lastUserAgent.get());
+        assertEquals("burp-lookup/1.1.1", lastClient.get());
         assertEquals(null, lastAuthorization.get());
     }
 
@@ -107,6 +107,16 @@ class LookupClientTest {
                 () -> new LookupClient(endpoint).lookup("example.com"));
         assertTrue(ex.getMessage().toLowerCase().contains("rate limited"));
         assertTrue(ex.getMessage().contains("600"));
+        assertTrue(ex.getMessage().contains("7"));
+    }
+
+    @Test
+    void busyServiceIsRetriedOnceThenReportsBusy() {
+        status = 503;
+        LookupException ex = assertThrows(LookupException.class,
+                () -> new LookupClient(endpoint).lookup("example.net"));
+        assertEquals(2, hits.get(), "a 503 must be retried exactly once");
+        assertTrue(ex.getMessage().toLowerCase().contains("busy"));
         assertTrue(ex.getMessage().contains("7"));
     }
 

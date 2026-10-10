@@ -26,9 +26,14 @@ public class LookupClient {
 
     private static final String ENDPOINT = "https://lookup.disclose.io/api/lookup";
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
-    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
+    // A first-time (uncached) lookup for a large organization takes 30 to 40s
+    // server-side, so the request deadline must sit comfortably above that.
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(60);
+    // The service sheds load with 503 + Retry-After; retry once after the
+    // advertised delay, capped so the UI never waits unreasonably.
+    private static final long BUSY_RETRY_MAX_WAIT_SECONDS = 15;
     private static final long CACHE_TTL_MILLIS = 5 * 60 * 1000L; // 5 minutes
-    private static final String CLIENT_ID = "burp-lookup/1.1.0";
+    private static final String CLIENT_ID = "burp-lookup/1.1.1";
 
     private final HttpClient httpClient;
     private final Gson gson;
@@ -84,9 +89,13 @@ public class LookupClient {
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 503) {
+                Thread.sleep(busyRetryWaitSeconds(response) * 1000L);
+                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            }
         } catch (java.net.http.HttpTimeoutException e) {
             throw new LookupException("Lookup timed out after " + REQUEST_TIMEOUT.toSeconds()
-                    + "s. The service may be slow or unreachable.", e);
+                    + "s. First-time lookups for large organizations can be slow; try again.", e);
         } catch (java.io.IOException e) {
             throw new LookupException("Could not reach lookup.disclose.io (offline?): "
                     + e.getMessage(), e);
@@ -101,6 +110,11 @@ public class LookupClient {
             String retryAfter = response.headers().firstValue("Retry-After").orElse("a moment");
             throw new LookupException("Rate limited by lookup.disclose.io (limit " + limit
                     + "). Retry after " + retryAfter + " second(s).");
+        }
+        if (code == 503) {
+            String retryAfter = response.headers().firstValue("Retry-After").orElse("a few");
+            throw new LookupException("lookup.disclose.io is busy. Try again in " + retryAfter
+                    + " second(s).");
         }
         if (code < 200 || code >= 300) {
             throw new LookupException("lookup.disclose.io returned HTTP " + code + ".");
@@ -132,5 +146,15 @@ public class LookupClient {
         boolean isExpired() {
             return System.currentTimeMillis() - storedAt > CACHE_TTL_MILLIS;
         }
+    }
+
+    private static long busyRetryWaitSeconds(HttpResponse<String> response) {
+        try {
+            long advertised = Long.parseLong(response.headers().firstValue("Retry-After").orElse("").trim());
+            if (advertised > 0) return Math.min(advertised, BUSY_RETRY_MAX_WAIT_SECONDS);
+        } catch (NumberFormatException ignored) {
+            // fall through to the default
+        }
+        return 5;
     }
 }
